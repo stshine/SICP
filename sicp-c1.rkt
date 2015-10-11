@@ -73,25 +73,45 @@
 
 ;; ex 1.20
 
-
 ;; ex 1.21
 (: smallest-divisor (-> Positive-Integer Positive-Integer))
 (define (smallest-divisor n)
   (find-divisor n 2))
-
 (: find-divisor (-> Positive-Integer Positive-Integer Positive-Integer))
 (define (find-divisor n test-divisor)
   (cond ((> (sqr test-divisor) n) n)
-        ((divides? test-divisor n) test-divisor)
-        (else (find-divisor n (+ test-divisor 1)))))
-
+        ((divides? n test-divisor) test-divisor)
+        (else (find-divisor n (next-divisor test-divisor)))))
+(: next-divisor (-> Positive-Integer Positive-Integer))
+(define (next-divisor n)
+  (if (= n 2) 3
+      (+ 2 n)))
 (: divides? (-> Positive-Integer Positive-Integer Boolean))
-(define (divides? a b)
-  (= (remainder b a) 0))
+(define (divides? a b) (= (remainder a b) 0))
+(: prime? (-> Positive-Integer Boolean))
+(define (prime? n)
+  (= n (smallest-divisor n)))
 
 ;; ex 1.22
-;; (: timed-prime-test (-> Positive-Integer))
-;; (define (timed-prime-test n)
-;;   (newline)
-;;   (display n)
-;;   (start-prime-test n (current-process-milliseconds)))
+(: timed-prime-test (-> Positive-Integer Void))
+(define (timed-prime-test n)
+  (start-prime-test n (current-process-milliseconds)))
+
+(: start-prime-test (-> Positive-Integer Fixnum Void))
+(define (start-prime-test n start-time)
+  (when (prime? n)
+    (newline)
+    (display n)
+    (report-prime (- (current-process-milliseconds) start-time))))
+(: report-prime (-> Integer Void))
+(define (report-prime elapsed-time)
+  (display " *** ")
+  (display elapsed-time))
+
+(: search-for-primes (-> Positive-Integer Positive-Integer Void))
+(define (search-for-primes start end)
+  (search-iter start end))
+(: search-iter (-> Positive-Integer Positive-Integer Void))
+(define (search-iter cur last) 
+  (when (<= cur last) (timed-prime-test cur)) 
+  (when (<= cur last) (search-iter (+ cur 2) last)))
