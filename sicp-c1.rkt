@@ -83,6 +83,7 @@
         ((divides? n test-divisor) test-divisor)
         (else (find-divisor n (next-divisor test-divisor)))))
 (: next-divisor (-> Positive-Integer Positive-Integer))
+;; ex 1.23
 (define (next-divisor n)
   (if (= n 2) 3
       (+ 2 n)))
@@ -99,7 +100,7 @@
 
 (: start-prime-test (-> Positive-Integer Fixnum Void))
 (define (start-prime-test n start-time)
-  (when (prime? n)
+  (when (fast-prime? n 12)
     (newline)
     (display n)
     (report-prime (- (current-process-milliseconds) start-time))))
@@ -115,3 +116,43 @@
 (define (search-iter cur last) 
   (when (<= cur last) (timed-prime-test cur)) 
   (when (<= cur last) (search-iter (+ cur 2) last)))
+
+;; ex 1.24
+(: expmod (-> Positive-Integer Natural Positive-Integer Natural))
+(define (expmod base exp m)
+  (cond ((= exp 0) 1)
+        ((even? exp)
+         (remainder
+          (sqr (expmod base (quotient exp 2) m))
+          m))
+        (else
+         (remainder
+          (* base (expmod base (- exp 1) m))
+          m))))
+
+(: fermat-test (-> Positive-Integer Boolean))
+(define (fermat-test n)
+  (: try-it (-> Positive-Integer Boolean))
+  (define (try-it a)
+;;; NOTE: notice the solving of difficulty of error handling here.
+    (= (expmod a (- n 1) n) 1))
+  (try-it (+ 1 (random (- n 1)))))
+
+(: fast-prime? (-> Positive-Integer Natural Boolean))
+(define (fast-prime? n times)
+  (cond ((= times 0) true)
+        ((fermat-test n) (fast-prime? n (- times 1)))
+        (else false)))
+
+;; ex 1.28
+(: mmod (-> Positive-Integer Natural Positive-Integer Natural))
+(define (mmod base exp m)
+  (cond ((= exp 0) 1)
+        ((even? exp)
+         (let ((a (remainder (sqr (expmod base (quotient exp 2) m)) m)))
+           (if (= 1 a) 0 a)))
+        (else
+         (remainder
+          (* base (expmod base (- exp 1) m))
+          m))))
+
