@@ -156,3 +156,151 @@
           (* base (expmod base (- exp 1) m))
           m))))
 
+
+;; ex 1.29
+(: sum (-> (-> Integer Real) Integer (-> Integer Integer) Integer Real))
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(: sintegral (-> (-> Real Real) Integer Integer Natural Real))
+(define (sintegral f a b n)
+  (: next (-> Integer Integer))
+  (define (next n) (+ n 1))
+  (: term (-> Integer Real))
+  (define (term x)
+    (*  (f (+ a (/ (* x (- b a)) n)))
+        (if (or (= x 0) (= x n))
+            1
+            (* 2 (+ 1 (remainder x 2))))))
+  (* (/ (- b a) (* 3 n)) (sum term 0 next n)))
+
+
+;; ex 1.30
+(: nsum (-> (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (nsum term a next b)
+  (: iter (-> Integer Real Real))
+  (define (iter a result)
+    (if (> a b) result
+        (iter (next a) (+ result (term a)))))
+  (iter a 0))
+
+;; ex 1.31
+(: product (-> (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (product term a next b)
+  (if (> a b)
+      1
+      (* (term a)
+         (product term (next a) next b))))
+
+(: factorial (-> Natural Real))
+(define (factorial n)
+  (product (lambda (a) a) 1 (lambda (a) (+ 1 a)) n))
+
+(: pro-pi (-> Positive-Integer Real))
+(define (pro-pi n)
+  (/ (product (lambda (a) (/ (* (- a 1) (+ a 1)) (* a a))) 3 (lambda (a) (+ 2 a)) n) 4))
+
+(: npro (-> (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (npro term a next b)
+  (: iter (-> Integer Real Real))
+  (define (iter a result)
+    (if (> a b) result
+        (* result (term a))))
+  (iter a 1))
+
+;; ex 1.32
+(: accu (-> (-> Real Real Real) Real (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (accu combiner null-value term a next b)
+  (if (> a b)
+      null-value
+      (combiner (term a)
+       (accu combiner null-value term (next a) next b))))
+
+(: asum (-> (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (asum term a next b)
+  (accu + 0 term a next b))
+
+(: apro (-> (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (apro term a next b)
+  (accu * 1 term a next b))
+
+(: iaccu (-> (-> Real Real Real) Real (-> Real Real) Integer (-> Integer Integer) Integer Real))
+(define (iaccu combiner null-value term a next b)
+  (: iter (-> Integer Real Real))
+  (define (iter x result)
+    (if (> x b) result
+        (iter (next x) (combiner result (term x)))))
+  (iter a null-value))
+
+;; (: accu-filter (-> (-> Positive-Integer Boolean) (-> Real Real Real) Real (-> Real Real) Integer (-> Integer Integer) Integer Real))
+;; (define (accu-filter predicate combiner null-value term a next b)
+;;   (cond ((> a b) null-value)
+;;         ((predicate (term a)) (combiner (term a)
+;;                                         (accu-filter predicate combiner null-value term (next a) next b)))
+;;         (else (accu-filter predicate combiner null-value term (next a) next b))))
+
+;; ;; (: prime-sum (-> Natural Real))
+;; (define (prime-sum n)
+;;   (accu-filter prime? + 0 + 2 (lambda (a) (+ 1 a)) n))
+
+;; ex 1.35
+
+(define tolerance 0.00001)
+
+(: fixed-point (-> (-> Positive-Real Positive-Real) Positive-Real Positive-Real))
+(define (fixed-point f first-guess)
+  (: close-enough? (-> Positive-Real Positive-Real Boolean))
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (: try (-> Positive-Real Positive-Real))
+  (define (try guess)
+    (let ((next (f guess)))
+      (displayln guess)
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+
+;; (fixed-point (lambda ([x : Number]) (+ 1 (/ 1 x))) 1.0)
+
+;; ex 1.36
+(: uln (-> Positive-Real Positive-Real))
+(define (uln x) (assert (/ (log 1000) (log x)) positive?))
+(: ull (-> Positive-Real Positive-Real))
+(define (ull x) (assert (/ (+ x (/ (log 1000) (log x))) 2) positive?))
+;; ;; (fixed-point ull 2.0)
+
+;; ex 1.37
+(: cont-frac (-> (-> Integer Real) (-> Integer Real) Index Real))
+(define (cont-frac n d k)
+  (: iter (-> Natural Real))
+  (define (iter x)
+    (if (= x k)
+        (/ (n x) (d x))
+        (/ (n x) (+ (d x) (iter (+ x 1))))))
+  (iter 1))
+
+(: icont-frac (-> (-> Integer Real) (-> Integer Real) Index Real))
+(define (icont-frac n d k)
+  (: iter (-> Natural Real Real))
+  (define (iter x result)
+    (if (= x 0) result
+        (iter (- x 1) (/ (d x) (+ (n x) result)))))
+  (iter k 0))
+
+;; ex 1.38
+(: expc (-> Index Real))
+(define (expc k)
+  (: do (-> Integer Integer))
+  (define (do n)
+    (if (= (remainder n 3) 2) (* 2 (+ 1 (quotient n 3))) 1))
+  (cont-frac (lambda (x) 1.0) do k))
+
+;; ex 1.39
+(: tan-cf (-> Real Index Real))
+(define (tan-cf x k)
+  (cont-frac (lambda (n) (- (+ 1 (* 2 n)))) (lambda (n) (expt x n)) k))
