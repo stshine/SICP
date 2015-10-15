@@ -250,12 +250,12 @@
 
 (define tolerance 0.00001)
 
-(: fixed-point (-> (-> Positive-Real Positive-Real) Positive-Real Positive-Real))
+(: fixed-point (-> (-> Real Real) Real Real))
 (define (fixed-point f first-guess)
-  (: close-enough? (-> Positive-Real Positive-Real Boolean))
+  (: close-enough? (-> Real Real Boolean))
   (define (close-enough? v1 v2)
     (< (abs (- v1 v2)) tolerance))
-  (: try (-> Positive-Real Positive-Real))
+  (: try (-> Real Real))
   (define (try guess)
     (let ((next (f guess)))
       (displayln guess)
@@ -265,7 +265,7 @@
   (try first-guess))
 
 
-;; (fixed-point (lambda ([x : Number]) (+ 1 (/ 1 x))) 1.0)
+;; (fixed-point (lambda ([x : Real]) (+ 1 (/ 1 x))) 1.0)
 
 ;; ex 1.36
 (: uln (-> Positive-Real Positive-Real))
@@ -304,3 +304,88 @@
 (: tan-cf (-> Real Index Real))
 (define (tan-cf x k)
   (cont-frac (lambda (n) (- (+ 1 (* 2 n)))) (lambda (n) (expt x n)) k))
+
+
+;; ex 1.40
+
+(: deriv (-> (-> Real Real) (-> Real Real)))
+(define (deriv g)
+  (define dx 0.00001)
+  (lambda (x)
+    (/ (- (g (+ x dx)) (g x))
+       dx)))
+
+(: newton-transform (-> (-> Real Real) (-> Real Real)))
+(define (newton-transform g)
+  (lambda (x)
+    (- x (/ (g x) ((deriv g) x)))))
+
+(: newton-method (-> (-> Real Real) Real Real))
+(define (newton-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+
+(: cubic (-> Integer Integer Integer (-> Real Real)))
+(define (cubic a b c)
+  (lambda (x) (+ (*  x x x) (* a x x) (* b x) c)))
+;; (newton-method (cubic 3 2 1) 1)
+
+;; ex 1.41
+;; (define-type NumFunc (Rec NF (U (-> NF NF) (-> Number Number))))
+
+(: doub (All (a) (-> (-> a a) (-> a a))))
+(define (doub f)
+  (lambda (x) (f (f x))))
+
+(: inc (-> Number Number))
+(define (inc x) (+ 1 x))
+;;; Hack due to the limit of Typed Racket.
+;; (((doub (doub (inst doub Number))) inc) 5)
+
+;; ex 1.42
+
+(: comps (All (a b c) (-> (-> b c) (-> a b) (-> a c))))
+(define (comps f g)
+  (lambda (x)  (f (g x))))
+
+;; ex 1.43
+(: repeated (All (a) (-> (-> a a) Integer (-> a a))))
+(define (repeated f n)
+  (if (= n 1)
+      f
+      (compose f (repeated f (- n 1)))))
+
+;; ex 1.44
+
+(: smooth (-> (-> Number Number) Number (-> Number Number)))
+(define (smooth f dx)
+  (lambda (x) (+ (f (- x dx)) (f x) (f (+ x dx)))))
+(: nsmooth (-> (-> Number Number) Number Integer (-> Number Number)))
+(define (nsmooth f dx n)
+  (repeated (smooth f dx) n))
+
+;; ex 1.45
+(: average-damp (-> (-> Real Real) (-> Real Real)))
+(define (average-damp f)
+  (lambda (x) (/ (+ x (f x)) 2)))
+
+(: nth-root (-> Integer Real Real))
+(define (nth-root n x)
+  (fixed-point (repeated (average-damp (lambda (y) (/ x (expt y (- n 1))))) n) 1.0))
+
+;; ex 1.46
+(: iterative-improve (-> (-> Real Boolean) (-> Real Real) (-> Real Real)))
+(define (iterative-improve good-enough? improve)
+  (: iter (-> Real Real))
+  (define (iter y)
+    (if (good-enough? y) y
+                   (iter (improve y))))
+  (lambda (x)  (iter x)))
+
+(: ifixed (-> (-> Real Real) Real Real))
+(define (ifixed f x)
+  ((iterative-improve (lambda (y) (< (abs (- y (f y))) 0.00001)) f) x))
+(: fsqrt (-> Real Real))
+(define (fsqrt x)
+  ((iterative-improve (lambda (y) (< (abs (- (sqr y) x)) 0.000001))
+                      (lambda (y) (/ (+ y (/ 1 y)) 2))) x))
