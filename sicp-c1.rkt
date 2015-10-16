@@ -388,4 +388,5 @@
 (: fsqrt (-> Real Real))
 (define (fsqrt x)
   ((iterative-improve (lambda (y) (< (abs (- (sqr y) x)) 0.000001))
-                      (lambda (y) (/ (+ y (/ 1 y)) 2))) x))
+                      (lambda (y) (/ (+ y (/ 1 y)) 2)))
+   x))
