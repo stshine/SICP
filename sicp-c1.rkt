@@ -10,6 +10,7 @@
 (: fexpt (-> Real Natural Real))
 (define (fexpt b n)
   (fexpt-iter b n 1))
+
 (: fexpt-iter (-> Real Natural Real Real))
 (define (fexpt-iter b n x)
   (if (= n 0)
@@ -103,8 +104,8 @@
 (define (search-for-primes start end)
   (search-iter start end))
 (: search-iter (-> Positive-Integer Positive-Integer Void))
-(define (search-iter cur last) 
-  (when (<= cur last) (timed-prime-test cur)) 
+(define (search-iter cur last)
+  (when (<= cur last) (timed-prime-test cur))
   (when (<= cur last) (search-iter (+ cur 2) last)))
 
 ;; ex 1.24
@@ -369,7 +370,7 @@
   (: iter (-> Real Real))
   (define (iter y)
     (if (good-enough? y) y
-                   (iter (improve y))))
+        (iter (improve y))))
   (lambda (x)  (iter x)))
 
 (: ifixed (-> (-> Real Real) Real Real))
