@@ -294,7 +294,7 @@
 ;; ex 1.39
 (: tan-cf (-> Real Index Real))
 (define (tan-cf x k)
-  (cont-frac (lambda (n) (- (+ 1 (* 2 n)))) (lambda (n) (expt x n)) k))
+  (cont-frac (lambda ([n : Real]) (- (+ 1 (* 2 n)))) (lambda ([n : Real]) (expt x n)) k))
 
 
 ;; ex 1.40
